@@ -21,7 +21,7 @@ body.idle, body.idle * { cursor: none !important; }
 
 /* ---------- 전광판 ---------- */
 #stage {
-  position: absolute; left: 0; top: 0;
+  position: fixed; left: 0; top: 0;
   width: 1920px; height: 1080px;
   transform-origin: 0 0;
   display: flex; flex-direction: column;
@@ -82,6 +82,9 @@ body.idle, body.idle * { cursor: none !important; }
 }
 #editBtn:hover { color: #E0E0E0; }
 body.idle #editBtn, body.editing #editBtn { display: none; }
+/* 휴대폰으로 대시보드를 볼 때는 편집 화면으로 돌아가는 버튼을 항상 표시 */
+body.phone.idle #editBtn { display: block; }
+body.phone #editBtn { color: #999; font-size: 30px; }
 
 /* ---------- 편집 모드 ---------- */
 body.editing #stage { outline: 1px solid #333; }

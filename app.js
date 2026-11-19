@@ -21,7 +21,9 @@
     notice: '12월 25일 체육관 휴관합니다.'
   };
 
-  var $ = function (id) { return document.getElementById(id); };
+  // 없는 요소를 찾아도 멈추지 않도록 빈 요소를 돌려줌 (화면마다 있는 요소가 다름)
+  var $ = function (id) { return document.getElementById(id) || document.createElement('div'); };
+  var byId = function (id) { return document.getElementById(id); };
   var MOBILE = document.body.classList.contains('mobile');   // mobile.html (휴대폰 편집 화면)
   var dirty = false;                                          // 휴대폰 화면에서 아직 저장 안 한 수정이 있는지
   var stage = $('stage'), toolbar = $('toolbar'), statusEl = $('status');
@@ -237,7 +239,7 @@
   }
 
   function buildTicker() {
-    var track = $('tickerTrack'), view = $('tickerView');
+    var track = byId('tickerTrack'), view = byId('tickerView');
     if (!track || !view) return;
     var text = (board.notice || '').replace(/\s+/g, ' ').trim();
     track.style.animation = 'none';
@@ -411,7 +413,12 @@
     wake();
   }
 
-  if ($('editBtn')) $('editBtn').addEventListener('click', function () {
+  // 휴대폰에서 대시보드를 보고 있을 때 연필 버튼을 누르면 휴대폰 편집 화면으로 이동
+  var PHONE = false;
+  try { PHONE = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600; } catch (e) {}
+  if (PHONE && !MOBILE) document.body.classList.add('phone');
+  if (byId('editBtn')) byId('editBtn').addEventListener('click', function () {
+    if (PHONE && !MOBILE) { location.href = 'mobile.html'; return; }
     if (store.isAuthed()) enterEdit();
     else openModal('loginModal');
   });
