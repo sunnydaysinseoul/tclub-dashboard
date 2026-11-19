@@ -148,3 +148,6 @@ body.editing #noticeEdit:focus { outline: 2px solid var(--yellow); }
 .arc-btns button { height: 30px !important; padding: 4px 10px !important; font-size: 13px !important; }
 .arc-btns button.danger { color: #ff6b61; }
 .arc-empty { color: #777; padding: 24px 0; text-align: center; }
+
+/* 입력창을 눌러도 선택한 글자를 계속 표시 */
+::highlight(saved-sel) { background-color: rgba(77,163,255,.45); }

@@ -384,6 +384,7 @@
     toolbar.hidden = true;
     editables.forEach(function (el) { el.removeAttribute('contenteditable'); el.classList.remove('overflow'); });
     savedRange = null;
+    paintSaved();
     fit();
     render();
     wake();
@@ -482,22 +483,33 @@
     if (!editing) return;
     var sel = window.getSelection();
     if (!sel.rangeCount) return;
+    // 입력창/색 선택창 등으로 포커스가 옮겨 가는 순간에는 선택을 덮어쓰지 않음
+    if (!hostOf(document.activeElement)) return;
     var r = sel.getRangeAt(0);
     var h = hostOf(r.startContainer);
     if (h && h === hostOf(r.endContainer)) {
       savedRange = r.cloneRange();
+      paintSaved();
       var el = r.startContainer.nodeType === 3 ? r.startContainer.parentNode : r.startContainer;
       var px = Math.round(parseFloat(getComputedStyle(el).fontSize));
       if (document.activeElement !== $('sizeInput') && px) $('sizeInput').value = px;
     }
   });
 
+  // 입력창을 누르면 실제 선택 표시는 사라지므로, 기억해 둔 선택을 색으로 계속 보여 줌
+  var canPaint = !!(window.CSS && CSS.highlights && window.Highlight);
+  function paintSaved() {
+    if (!canPaint) return;
+    if (savedRange && !savedRange.collapsed && editing) CSS.highlights.set('saved-sel', new Highlight(savedRange));
+    else CSS.highlights.delete('saved-sel');
+  }
+
   // 도구 막대 버튼을 눌러도 글자 선택이 풀리지 않게
   toolbar.addEventListener('mousedown', function (e) {
     if (e.target.tagName === 'BUTTON') e.preventDefault();
   });
 
-  function applyFormat(mutate) {
+  function applyFormat(mutate, keepFocus) {
     if (!savedRange) { setStatus('먼저 바꿀 글자를 마우스로 드래그해서 선택해 주세요.', 'warn'); return; }
     var host = hostOf(savedRange.startContainer);
     if (!host || !host.contains(savedRange.endContainer)) return;
@@ -520,11 +532,14 @@
       var r = document.createRange();
       r.setStart(pts.start[0], pts.start[1]);
       r.setEnd(pts.end[0], pts.end[1]);
-      host.focus();
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(r);
+      if (!keepFocus) {
+        host.focus();
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
       savedRange = r.cloneRange();
+      paintSaved();
     }
     checkOverflow();
   }
@@ -535,11 +550,11 @@
     };
   }
 
-  function applySize(px) {
+  function applySize(px, keepFocus) {
     px = Math.round(Number(px));
     if (!(px >= 8 && px <= 400)) { setStatus('글자 크기는 8~400px 사이로 넣어 주세요.', 'warn'); return; }
-    $('sizeInput').value = px;
-    applyFormat(setProp('size', px));
+    if (!keepFocus) $('sizeInput').value = px;
+    applyFormat(setProp('size', px), keepFocus);
     setStatus('글자 크기를 ' + px + 'px로 바꿨어요.');
   }
 
@@ -548,7 +563,15 @@
   });
   $('sizeApply').addEventListener('click', function () { applySize($('sizeInput').value); });
   $('sizeInput').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); applySize(this.value); }
+    if (e.key === 'Enter') { e.preventDefault(); applySize(this.value, true); }
+  });
+  // 스핀 버튼(▲▼)이나 키보드 화살표로 숫자를 바꾸면 바로 적용, 직접 입력은 잠깐 멈추면 적용
+  var sizeTimer = null;
+  $('sizeInput').addEventListener('input', function () {
+    var v = this.value;
+    clearTimeout(sizeTimer);
+    if (v === '' || Number(v) < 8) return;
+    sizeTimer = setTimeout(function () { applySize(v, true); }, 350);
   });
 
   $('btnBold').addEventListener('click', function () {
