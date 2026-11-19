@@ -7,14 +7,14 @@ body.mobile #toolbar {
   position: sticky; top: 0;
   padding: 8px 10px 6px;
 }
-body.mobile .tb-row { gap: 6px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-body.mobile .tb-row::-webkit-scrollbar { display: none; }
-body.mobile .tb-row > * { flex: 0 0 auto; }
+/* 버튼이 잘리지 않도록 여러 줄로 감싸기 */
+body.mobile .tb-row { gap: 5px; flex-wrap: wrap; }
 body.mobile .tb-sep { display: none; }
-body.mobile #toolbar button { height: 36px; font-size: 14px; padding: 4px 10px; }
-body.mobile #toolbar button.sw { width: 34px; height: 34px; }
-body.mobile #toolbar input[type=number] { width: 64px; height: 36px; font-size: 16px; }
-body.mobile #toolbar input[type=color] { width: 40px; height: 36px; }
+body.mobile #toolbar button { height: 34px; font-size: 13px; padding: 2px 8px; }
+body.mobile #toolbar button.sw { width: 30px; height: 30px; }
+body.mobile #toolbar input[type=number] { width: 56px; height: 34px; font-size: 16px; }
+body.mobile #toolbar input[type=color] { width: 34px; height: 32px; }
+body.mobile .tb-unit { margin-left: -2px; }
 body.mobile #status { font-size: 12px; line-height: 1.4; min-height: 0; }
 
 #mwrap { padding: 4px 12px 20px; }
