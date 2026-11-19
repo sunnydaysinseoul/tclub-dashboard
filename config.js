@@ -12,7 +12,14 @@
 window.BOARD_CONFIG = {
   adminEmail: "",
 
-  firebase: null
+  firebase: {
+    apiKey: "AIzaSyANAuSuXNz6Vwa_doumRnJkxJJ5F0I4wG0",
+    authDomain: "tclub-dashboard.firebaseapp.com",
+    projectId: "tclub-dashboard",
+    storageBucket: "tclub-dashboard.firebasestorage.app",
+    messagingSenderId: "371487230141",
+    appId: "1:371487230141:web:94e19acb3316b8e1d94fd4"
+  }
   /* 예시 (따옴표 안 값만 바꿔 넣으면 됩니다)
   firebase: {
     apiKey: "AIza...",
