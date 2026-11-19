@@ -75,10 +75,12 @@ body.idle, body.idle * { cursor: none !important; }
 /* 편집 버튼 (평소엔 흐리게) */
 #editBtn {
   position: fixed; right: 12px; top: 10px; z-index: 20;
-  background: transparent; color: #555; border: 1px solid #333;
-  font: inherit; font-size: 13px; padding: 4px 10px; cursor: pointer;
+  background: transparent; color: #555; border: 0;
+  font-size: 26px; line-height: 1; padding: 6px 8px; cursor: pointer;
+  font-family: 'Segoe UI Symbol', 'Apple Symbols', 'DejaVu Sans', sans-serif;
+  transition: color .15s;
 }
-#editBtn:hover { color: #ddd; border-color: #777; }
+#editBtn:hover { color: #E0E0E0; }
 body.idle #editBtn, body.editing #editBtn { display: none; }
 
 /* ---------- 편집 모드 ---------- */
