@@ -22,6 +22,8 @@
   };
 
   var $ = function (id) { return document.getElementById(id); };
+  var MOBILE = document.body.classList.contains('mobile');   // mobile.html (휴대폰 편집 화면)
+  var dirty = false;                                          // 휴대폰 화면에서 아직 저장 안 한 수정이 있는지
   var stage = $('stage'), toolbar = $('toolbar'), statusEl = $('status');
 
   var board = clone(DEFAULT_BOARD);  // 마지막으로 저장된 내용
@@ -34,6 +36,14 @@
    * (가로 비율이 달라도 세로 길이는 화면에 맞게 늘어나거나 줄어듦)
    * ======================================================= */
   function fit() {
+    if (MOBILE) {
+      // 휴대폰: 대시보드 한쪽(960px)을 화면 너비에 맞게 줄여서 실제와 똑같이 미리 보기
+      Array.prototype.forEach.call(document.querySelectorAll('.m-frame'), function (fr) {
+        var p = fr.firstElementChild;
+        if (p) p.style.zoom = fr.clientWidth / 960;
+      });
+      return;
+    }
     // 편집 중에도 실제 전광판과 똑같은 비율로 보이도록 전체 화면 기준 크기를 유지
     var top = editing ? toolbar.offsetHeight : 0;
     var full = window.innerWidth / BASE_W;
@@ -228,6 +238,7 @@
 
   function buildTicker() {
     var track = $('tickerTrack'), view = $('tickerView');
+    if (!track || !view) return;
     var text = (board.notice || '').replace(/\s+/g, ' ').trim();
     track.style.animation = 'none';
     track.innerHTML = '';
@@ -260,6 +271,7 @@
 
   // 매일 새벽 4시에 새로고침 (오래 켜 두는 PC 대비)
   (function scheduleReload() {
+    if (MOBILE) return;
     var now = new Date(), t = new Date(now);
     t.setHours(4, 0, 0, 0);
     if (t <= now) t.setDate(t.getDate() + 1);
@@ -348,7 +360,7 @@
     board = Object.assign(clone(DEFAULT_BOARD), data);
     delete board.updatedAt;
     try { localStorage.setItem(CACHE, JSON.stringify(board)); } catch (e) {}
-    if (!editing) render();
+    if (!editing || (MOBILE && !dirty)) { render(); checkOverflow(); }
   }
 
   /* =========================================================
@@ -379,6 +391,15 @@
   }
 
   function exitEdit() {
+    if (MOBILE) {
+      // 휴대폰 화면은 항상 편집 상태: 마지막 저장 내용으로 다시 그리기만 함
+      dirty = false;
+      savedRange = null;
+      paintSaved();
+      render();
+      checkOverflow();
+      return;
+    }
     editing = false;
     document.body.classList.remove('editing');
     toolbar.hidden = true;
@@ -390,7 +411,7 @@
     wake();
   }
 
-  $('editBtn').addEventListener('click', function () {
+  if ($('editBtn')) $('editBtn').addEventListener('click', function () {
     if (store.isAuthed()) enterEdit();
     else openModal('loginModal');
   });
@@ -414,7 +435,10 @@
   });
 
   $('btnLogout').addEventListener('click', function () {
-    store.signOut().then(function () { exitEdit(); });
+    store.signOut().then(function () {
+      if (MOBILE) { openModal('loginModal'); return; }
+      exitEdit();
+    });
   });
 
   $('btnCancel').addEventListener('click', function () { exitEdit(); });
@@ -434,6 +458,7 @@
     }).then(function () {
       btn.disabled = false;
       exitEdit();
+      if (MOBILE) setStatus('저장했어요. 대시보드 화면에 바로 반영됩니다.');
     }).catch(function (e) {
       btn.disabled = false;
       setStatus('저장하지 못했어요. 인터넷 연결이나 로그인 상태를 확인해 주세요. (' + (e && e.code || e) + ')', 'bad');
@@ -442,6 +467,7 @@
 
   $('btnToday').addEventListener('click', function () {
     setHtml($('lessonDate'), todayLabel());
+    dirty = true;
     setStatus('오른쪽 날짜에 오늘 날짜를 넣었어요. (날짜 칸을 비워 두면 매일 자동으로 바뀝니다)');
   });
 
@@ -456,7 +482,7 @@
     el.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && (SINGLE_LINE[el.id] || el.id === 'noticeEdit')) e.preventDefault();
     });
-    el.addEventListener('input', checkOverflow);
+    el.addEventListener('input', function () { dirty = true; checkOverflow(); });
   });
 
   function checkOverflow() {
@@ -489,6 +515,7 @@
     var h = hostOf(r.startContainer);
     if (h && h === hostOf(r.endContainer)) {
       savedRange = r.cloneRange();
+      clearTimeout(sizeTimer);   // 다른 글자를 고르면 아직 적용 안 된 숫자 입력은 취소
       paintSaved();
       var el = r.startContainer.nodeType === 3 ? r.startContainer.parentNode : r.startContainer;
       var px = Math.round(parseFloat(getComputedStyle(el).fontSize));
@@ -528,6 +555,7 @@
     mutate(chars, { weight: parseInt(base.fontWeight, 10) || 400 });
 
     var pts = writeModel(host, m.lines, m.pos);
+    dirty = true;
     if (pts.start && pts.end) {
       var r = document.createRange();
       r.setStart(pts.start[0], pts.start[1]);
@@ -553,6 +581,7 @@
   function applySize(px, keepFocus) {
     px = Math.round(Number(px));
     if (!(px >= 8 && px <= 400)) { setStatus('글자 크기는 8~400px 사이로 넣어 주세요.', 'warn'); return; }
+    clearTimeout(sizeTimer);
     if (!keepFocus) $('sizeInput').value = px;
     applyFormat(setProp('size', px), keepFocus);
     setStatus('글자 크기를 ' + px + 'px로 바꿨어요.');
@@ -661,6 +690,7 @@
       load.textContent = it.type === 'lesson' ? '오늘의 수업에 불러오기' : '이번주 미션에 불러오기';
       load.addEventListener('click', function () {
         setHtml($(it.type === 'lesson' ? 'lessonBody' : 'missionBody'), it.html);
+        dirty = true;
         closeModal('archiveModal');
         setStatus('보관함에서 불러왔어요. "저장 및 적용"을 눌러야 전광판에 반영됩니다.', 'warn');
         checkOverflow();
@@ -708,6 +738,13 @@
   fit();
   render();
   store.subscribe(onBoard);
+  if (MOBILE) {
+    if (store.mode === 'local') enterEdit();
+    else store.onAuth(function (u) {
+      if (u) { closeModal('loginModal'); if (!editing) enterEdit(); }
+      else openModal('loginModal');
+    });
+  }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!editing) buildTicker(); });
 
   // 테스트용으로 내부 함수 노출
