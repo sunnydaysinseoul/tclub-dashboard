@@ -1,0 +1,148 @@
+:root {
+  --bg: #000000;
+  --fg: #FFFFFF;
+  --yellow: #FFD400;
+  --red: #FF3B30;
+  --ui-bg: #111111;
+  --ui-line: #3a3a3a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+  font-family: 'Pretendard Variable', Pretendard, 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.idle, body.idle * { cursor: none !important; }
+
+/* ---------- 전광판 ---------- */
+#stage {
+  position: absolute; left: 0; top: 0;
+  width: 1920px; height: 1080px;
+  transform-origin: 0 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+}
+#main { flex: 1 1 auto; min-height: 0; position: relative; display: flex; }
+.panel {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column;
+  padding: 56px 72px 40px;
+  overflow: hidden;
+}
+/* 중앙 흰색 수직선: 아래 끝이 공지 띠의 윗선과 정확히 맞닿음 */
+#divider {
+  position: absolute; left: 50%; top: 44px; bottom: 0;
+  width: 3px; margin-left: -1.5px;
+  background: var(--fg);
+}
+.date  { font-size: 32px; font-weight: 700; line-height: 1.3; min-height: 1.3em; }
+#missionDate { color: var(--yellow); }
+#lessonDate  { color: var(--red); }
+.title { font-size: 72px; font-weight: 800; line-height: 1.25; margin: 6px 0 44px; letter-spacing: -0.01em; }
+.body  {
+  flex: 1 1 auto; min-height: 0;
+  font-size: 48px; font-weight: 500; line-height: 1.55;
+  white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere;
+  overflow: hidden;
+}
+.body > div + div { margin-top: 0.15em; }
+
+/* 공지 띠 */
+#ticker {
+  flex: 0 0 auto; height: 112px;
+  display: flex;
+  border-top: 3px solid var(--fg);
+  background: #0d0d0d;
+}
+#tickerLabel {
+  flex: 0 0 auto;
+  display: flex; align-items: center;
+  padding: 0 40px;
+  background: var(--red); color: #fff;
+  font-size: 40px; font-weight: 800;
+}
+#tickerView { flex: 1 1 auto; min-width: 0; position: relative; overflow: hidden; display: flex; align-items: center; }
+#tickerTrack { display: flex; white-space: nowrap; font-size: 44px; font-weight: 700; will-change: transform; }
+#tickerTrack span { padding-right: 160px; }
+@keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+#noticeEdit { display: none; width: 100%; padding: 0 32px; font-size: 44px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+
+/* 편집 버튼 (평소엔 흐리게) */
+#editBtn {
+  position: fixed; right: 12px; top: 10px; z-index: 20;
+  background: transparent; color: #555; border: 1px solid #333;
+  font: inherit; font-size: 13px; padding: 4px 10px; cursor: pointer;
+}
+#editBtn:hover { color: #ddd; border-color: #777; }
+body.idle #editBtn, body.editing #editBtn { display: none; }
+
+/* ---------- 편집 모드 ---------- */
+body.editing #stage { outline: 1px solid #333; }
+body.editing .ed { outline: 1px dashed rgba(255,255,255,.35); outline-offset: 6px; }
+body.editing .ed:focus { outline: 2px solid var(--yellow); }
+body.editing .ed.overflow { outline: 2px dashed var(--red); }
+body.editing .ed:empty::before,
+body.editing #noticeEdit:empty::before { content: attr(data-ph); color: #555; font-weight: 400; }
+body.editing #tickerTrack { display: none; }
+body.editing #noticeEdit { display: block; outline: 1px dashed rgba(255,255,255,.35); outline-offset: -8px; padding: 0 32px; }
+body.editing #noticeEdit:focus { outline: 2px solid var(--yellow); }
+
+#toolbar {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 30;
+  background: var(--ui-bg); border-bottom: 1px solid var(--ui-line);
+  padding: 6px 8px 4px; font-size: 13px; color: #ddd;
+}
+.tb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+#toolbar button { font-size: 13px; }
+.tb-label, .tb-unit { color: #999; }
+.tb-sep { width: 1px; height: 26px; background: var(--ui-line); margin: 0 4px; }
+.tb-spacer { flex: 1 1 auto; }
+#toolbar button, .dialog button {
+  font: inherit; font-size: 14px; color: #eee; background: #1c1c1c;
+  border: 1px solid #444; padding: 4px 9px; cursor: pointer; height: 30px;
+}
+#toolbar button:hover, .dialog button:hover { border-color: #888; background: #262626; }
+#toolbar button.primary, .dialog button.primary { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
+#toolbar button.b { font-weight: 800; }
+#toolbar button.u { text-decoration: underline; }
+#toolbar button.sw { width: 28px; height: 28px; padding: 0; border: 1px solid #666; }
+#toolbar input[type=number] { width: 64px; height: 32px; font: inherit; font-size: 14px; background: #000; color: #fff; border: 1px solid #444; padding: 0 6px; }
+#toolbar input[type=color] { width: 34px; height: 30px; background: #000; border: 1px solid #444; padding: 2px; cursor: pointer; }
+#status { min-height: 18px; margin-top: 4px; font-size: 13px; color: #aaa; }
+#status.warn { color: var(--yellow); }
+#status.bad { color: #ff6b61; }
+
+/* ---------- 대화상자 ---------- */
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal[hidden] { display: none; }
+.dialog { width: min(920px, 100%); max-height: 90vh; display: flex; flex-direction: column; background: var(--ui-bg); border: 1px solid #444; color: #eee; font-size: 15px; }
+.dialog.small { width: min(400px, 100%); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--ui-line); font-weight: 700; }
+.dlg-body { padding: 18px; overflow: auto; }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--ui-line); }
+.dialog label { display: block; margin-bottom: 8px; color: #bbb; font-size: 14px; }
+.dialog input[type=password], .dialog input[type=search], .dialog select {
+  width: 100%; height: 38px; font: inherit; background: #000; color: #fff; border: 1px solid #444; padding: 0 10px;
+}
+.err { min-height: 20px; margin-top: 8px; color: #ff6b61; font-size: 14px; }
+.arc-tools { display: flex; gap: 8px; }
+.arc-tools select { width: 160px; flex: 0 0 auto; }
+.hint { margin: 10px 0 14px; color: #888; font-size: 13px; }
+.arc-item { border-top: 1px solid var(--ui-line); padding: 12px 0; }
+.arc-item:last-child { border-bottom: 1px solid var(--ui-line); }
+.arc-top { display: flex; align-items: center; gap: 10px; }
+.arc-type { font-size: 13px; font-weight: 700; flex: 0 0 auto; }
+.arc-type.lesson { color: var(--red); }
+.arc-type.mission { color: var(--yellow); }
+.arc-title { font-weight: 700; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arc-when { color: #777; font-size: 13px; flex: 0 0 auto; }
+.arc-prev { margin-top: 6px; color: #aaa; font-size: 14px; line-height: 1.5; white-space: pre-line; max-height: 6em; overflow: hidden; }
+.arc-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+.arc-btns button { height: 30px !important; padding: 4px 10px !important; font-size: 13px !important; }
+.arc-btns button.danger { color: #ff6b61; }
+.arc-empty { color: #777; padding: 24px 0; text-align: center; }
