@@ -321,7 +321,7 @@
           delArchive: function (id) { return db.collection('archive').doc(id).delete(); },
           isAuthed: function () { return !!auth.currentUser; },
           onAuth: function (cb) { auth.onAuthStateChanged(cb); },
-          signIn: function (pw) { return auth.signInWithEmailAndPassword(CFG.adminEmail, pw); },
+          signIn: function (email, pw) { return auth.signInWithEmailAndPassword(email, pw); },
           signOut: function () { return auth.signOut(); }
         };
       } catch (e) {
@@ -426,9 +426,12 @@
   $('loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var pw = $('pwInput').value;
+    // 이메일은 공개 저장소에 넣지 않고, 로그인할 때 입력받아 이 기기에만 기억
+    var email = ($('emailInput').value || CFG.adminEmail || '').trim();
     $('loginErr').textContent = '';
-    if (!CFG.adminEmail) { $('loginErr').textContent = 'config.js에 관리자 이메일(adminEmail)이 비어 있어요.'; return; }
-    store.signIn(pw).then(function () {
+    if (!email) { $('loginErr').textContent = '관리자 이메일을 입력해 주세요.'; return; }
+    store.signIn(email, pw).then(function () {
+      try { localStorage.setItem('gymboard.email', email); } catch (e) {}
       $('pwInput').value = '';
       closeModal('loginModal');
       enterEdit();
@@ -727,8 +730,12 @@
 
   /* ---------- 대화상자 공통 ---------- */
   function openModal(id) {
+    if (id === 'loginModal' && !$('emailInput').value) {
+      try { $('emailInput').value = localStorage.getItem('gymboard.email') || CFG.adminEmail || ''; } catch (e) {}
+    }
     $(id).hidden = false;
-    var f = $(id).querySelector('input');
+    var f = $(id).querySelector('input:placeholder-shown, input[type=password]');
+    if (id === 'loginModal') f = $('emailInput').value ? $('pwInput') : $('emailInput');
     if (f) setTimeout(function () { f.focus(); }, 0);
   }
   function closeModal(id) { $(id).hidden = true; }

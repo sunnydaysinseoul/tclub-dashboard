@@ -6,7 +6,7 @@
  * 브라우저에만 저장됩니다(비밀번호 없이 편집 가능).
  *
  * Firebase 설정을 마치면 아래 두 곳을 채워 주세요.
- *  1) adminEmail : Firebase Authentication에 만든 관리자 계정 이메일
+ *  1) adminEmail : 비워 두세요. 공개 저장소라 이메일은 로그인 화면에서 입력합니다(기기에 기억됨)
  *  2) firebase   : Firebase 콘솔 > 프로젝트 설정 > 내 앱 에서 복사한 값
  */
 window.BOARD_CONFIG = {
