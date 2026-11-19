@@ -154,3 +154,16 @@ body.editing #noticeEdit:focus { outline: 2px solid var(--yellow); }
 
 /* 입력창을 눌러도 선택한 글자를 계속 표시 */
 ::highlight(saved-sel) { background-color: rgba(77,163,255,.45); }
+
+/* 저장 알림 (토스트) */
+#toast {
+  position: fixed; left: 50%; bottom: 140px; z-index: 60;
+  transform: translate(-50%, 12px);
+  max-width: calc(100% - 32px); padding: 14px 22px;
+  background: #fff; color: #000; border-left: 6px solid var(--yellow);
+  font-size: 16px; font-weight: 700; line-height: 1.4; text-align: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+#toast.bad { border-left-color: var(--red); }

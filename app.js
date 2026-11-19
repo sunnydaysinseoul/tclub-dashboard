@@ -374,6 +374,17 @@
     statusEl.textContent = msg || '';
     statusEl.className = kind || '';
   }
+  // 잠깐 떴다 사라지는 알림 (저장 결과 등)
+  var toastTimer = null;
+  function toast(msg, kind) {
+    var t = byId('toast');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.textContent = msg;
+    t.className = 'show' + (kind ? ' ' + kind : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = kind || ''; }, kind === 'bad' ? 5000 : 2500);
+  }
+
   function modeNote() {
     return store.mode === 'local'
       ? '미리보기 모드: Firebase가 아직 연결되지 않아 이 브라우저에만 저장됩니다.'
@@ -468,10 +479,12 @@
     }).then(function () {
       btn.disabled = false;
       exitEdit();
-      if (MOBILE) setStatus('저장했어요. 대시보드 화면에 바로 반영됩니다.');
+      if (MOBILE) setStatus('');
+      toast('저장했어요. 대시보드에 바로 반영됩니다.');
     }).catch(function (e) {
       btn.disabled = false;
       setStatus('저장하지 못했어요. 인터넷 연결이나 로그인 상태를 확인해 주세요. (' + (e && e.code || e) + ')', 'bad');
+      toast('저장하지 못했어요. 인터넷이나 로그인 상태를 확인해 주세요.', 'bad');
     });
   });
 
