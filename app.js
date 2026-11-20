@@ -6,6 +6,8 @@
   var CFG = window.BOARD_CONFIG || {};
   var HTML_FIELDS = ['missionDate', 'missionTitle', 'missionBody', 'lessonDate', 'lessonTitle', 'lessonBody'];
   var SINGLE_LINE = { missionDate: 1, missionTitle: 1, lessonDate: 1, lessonTitle: 1 };
+  // style.css의 기본 글자 크기 (.date 32px / .title 72px / .body 48px)
+  var BASE_SIZE = { missionDate: 32, lessonDate: 32, missionTitle: 72, lessonTitle: 72, missionBody: 48, lessonBody: 48 };
   var WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
 
   var DEFAULT_BOARD = {
@@ -145,6 +147,10 @@
       var isBlock = n !== root && BLOCK.test(tag);
       var st2 = n === root ? st : readStyle(n, st);
       if (isBlock && !atStart) brk();
+      if (isBlock && n.style && n.style.lineHeight) {
+        var lhv = parseFloat(n.style.lineHeight);
+        if (lhv >= 0.8 && lhv <= 3 && !/px|em|%/.test(n.style.lineHeight)) cur().lh = lhv;
+      }
       for (var k = 0; k < n.childNodes.length; k++) { mark(n, k); walk(n.childNodes[k], st2); }
       mark(n, n.childNodes.length);
       if (isBlock && !atStart) brk();
@@ -179,8 +185,18 @@
     var onlyEmpty = lines.length === 1 && lines[0].length === 0;
     if (onlyEmpty) return pts;
 
+    var base = BASE_SIZE[host.id] || 48;
     lines.forEach(function (line, li) {
       var div = document.createElement('div');
+      // 줄간격: 줄마다 따로 (기본값이면 아무것도 안 붙임)
+      if (line.lh) div.style.lineHeight = String(line.lh);
+      // 한 줄이 전부 기본보다 작은 글씨면, 줄 높이도 그 글씨에 맞춤
+      // (안 그러면 작은 글씨여도 기본 글씨 기준의 넓은 줄간격이 남음)
+      if (line.length) {
+        var maxPx = 0;
+        for (var q = 0; q < line.length; q++) maxPx = Math.max(maxPx, line[q].s.size || base);
+        if (maxPx < base) div.style.fontSize = maxPx + 'px';
+      }
       if (!line.length) {
         div.appendChild(document.createElement('br'));
         ['start', 'end'].forEach(function (k) { if (pos && pos[k] && pos[k][0] === li && !pts[k]) pts[k] = [div, 0]; });
@@ -665,6 +681,9 @@
       var el = r.startContainer.nodeType === 3 ? r.startContainer.parentNode : r.startContainer;
       var px = Math.round(parseFloat(getComputedStyle(el).fontSize));
       if (document.activeElement !== $('sizeInput') && px) $('sizeInput').value = px;
+      var line = el.closest ? el.closest('.ed > div') : null;
+      var lhv = line && line.style.lineHeight ? line.style.lineHeight : '1.55';
+      $('lhSelect').value = { '1.1': '1.1', '1.3': '1.3', '1.55': '1.55', '1.9': '1.9' }[lhv] || '';
     }
   });
 
@@ -746,6 +765,38 @@
     clearTimeout(sizeTimer);
     if (v === '' || Number(v) < 8) return;
     sizeTimer = setTimeout(function () { applySize(v, true); }, 350);
+  });
+
+  // 줄간격: 선택한 줄(또는 커서가 있는 줄)에 적용
+  var LH_NAMES = { '1.1': '촘촘하게', '1.3': '좁게', '1.55': '보통', '1.9': '넓게' };
+  function applyLineHeight(v) {
+    if (!savedRange) { setStatus('먼저 줄간격을 바꿀 줄을 누르거나 드래그해서 선택해 주세요.', 'warn'); return; }
+    var host = hostOf(savedRange.startContainer);
+    if (!host || !host.contains(savedRange.endContainer)) return;
+    var m = readModel(host, { sc: savedRange.startContainer, so: savedRange.startOffset, ec: savedRange.endContainer, eo: savedRange.endOffset });
+    var s = m.pos.start, e = m.pos.end;
+    if (!s || !e) return;
+    var lh = Number(v) === 1.55 ? null : Number(v);
+    for (var li = s[0]; li <= e[0]; li++) m.lines[li].lh = lh;
+    var pts = writeModel(host, m.lines, m.pos);
+    dirty = true;
+    if (pts.start && pts.end) {
+      var r = document.createRange();
+      r.setStart(pts.start[0], pts.start[1]);
+      r.setEnd(pts.end[0], pts.end[1]);
+      host.focus();
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      savedRange = r.cloneRange();
+      paintSaved();
+    }
+    checkOverflow();
+    setStatus('줄간격을 "' + (LH_NAMES[String(v)] || v) + '" 단계로 바꿨어요.');
+  }
+  $('lhSelect').addEventListener('change', function () {
+    var v = this.value;
+    if (v) applyLineHeight(v);
   });
 
   $('btnBold').addEventListener('click', function () {
