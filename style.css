@@ -135,6 +135,9 @@ body.editing #noticeEdit:focus { outline: 2px solid var(--yellow); }
   width: 100%; height: 38px; font: inherit; background: #000; color: #fff; border: 1px solid #444; padding: 0 10px;
 }
 .err { min-height: 20px; margin-top: 8px; color: #ff6b61; font-size: 14px; }
+.err.ok { color: #bbb; }
+.dialog button.linkbtn { height: auto; margin-top: 6px; padding: 4px 0; border: 0; background: none; color: #999; font-size: 13px; text-decoration: underline; }
+.dialog button.linkbtn:hover { background: none; color: #fff; }
 .arc-tools { display: flex; gap: 8px; }
 .arc-tools select { width: 160px; flex: 0 0 auto; }
 .hint { margin: 10px 0 14px; color: #888; font-size: 13px; }
