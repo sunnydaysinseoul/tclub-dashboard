@@ -73,3 +73,4 @@ body.mobile #toast { bottom: calc(136px + env(safe-area-inset-bottom)); width: c
 /* 로그인 창(아래쪽)이 열려 있을 때는 토스트를 위쪽에 띄워 안내 문구를 가리지 않게 */
 body.mobile .modal:not([hidden]) ~ #toast { top: calc(16px + env(safe-area-inset-top)); bottom: auto; }
 .m-foot.foot-links { margin-top: 12px; }
+body.mobile #toolbar select { height: 34px; font-size: 16px; }
