@@ -18,5 +18,20 @@ service cloud.firestore {
     match /archive/{docId} {
       allow read, write: if isAdmin();
     }
+
+    // 오류 기록: 로그인 전 실패도 남기도록 누구나 "추가"만 가능 (정해진 칸, 길이 제한)
+    // 보기와 삭제는 관리자만, 수정은 아무도 못 함
+    match /logs/{logId} {
+      allow create: if request.resource.data.keys().hasOnly(['type', 'code', 'msg', 'page', 'ua', 'who', 'online', 't'])
+        && request.resource.data.type is string && request.resource.data.type.size() <= 40
+        && request.resource.data.code is string && request.resource.data.code.size() <= 100
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 500
+        && request.resource.data.page in ['pc', 'mobile']
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 300
+        && request.resource.data.who is string && request.resource.data.who.size() <= 60
+        && request.resource.data.online is bool
+        && request.resource.data.t == request.time;
+      allow read, delete: if isAdmin();
+    }
   }
 }
