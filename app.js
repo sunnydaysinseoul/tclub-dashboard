@@ -47,11 +47,13 @@
       return;
     }
     // 편집 중에도 실제 전광판과 똑같은 비율로 보이도록 전체 화면 기준 크기를 유지
+    // 편집 중에는 최대 90%로 줄여 가운데에 두고, 아래쪽에 작은 링크(문의하기/로그아웃) 자리를 남김
     var top = editing ? toolbar.offsetHeight : 0;
+    var foot = editing ? 40 : 0;
     var full = window.innerWidth / BASE_W;
     var h = window.innerHeight / full;
-    var s = Math.min(full, (window.innerHeight - top) / h);
-    stage.style.top = top + 'px';
+    var s = editing ? Math.min(full * 0.9, (window.innerHeight - top - foot - 24) / h) : full;
+    stage.style.top = (editing ? top + (window.innerHeight - top - foot - h * s) / 2 : 0) + 'px';
     stage.style.left = ((window.innerWidth - BASE_W * s) / 2) + 'px';
     stage.style.height = h + 'px';
     stage.style.transform = 'scale(' + s + ')';
