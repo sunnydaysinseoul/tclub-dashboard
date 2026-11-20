@@ -552,6 +552,25 @@
     }).then(function () { resetBusy = false; });
   });
 
+  // 개발자에게 문의하기: 메일 프로그램이 없는 PC도 있어서, 메일 창을 여는 것과 함께 주소를 복사해 둠
+  if (byId('contactLink')) byId('contactLink').addEventListener('click', function () {
+    var addr = decodeURIComponent(this.getAttribute('href').replace(/^mailto:/, '').split('?')[0]);
+    function done() { toast('이메일 주소가 복사됐어요: ' + addr); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = addr; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, addr.length);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      toast(ok ? '이메일 주소가 복사됐어요: ' + addr : '이메일 주소: ' + addr);
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(addr).then(done, fallback);
+    else fallback();
+    // 기본 동작(mailto로 메일 창 열기)은 그대로 둠
+  });
+
   $('btnLogout').addEventListener('click', function () {
     store.signOut().catch(function (e) { logError('logout-fail', e); }).then(function () {
       if (MOBILE) { openModal('loginModal'); return; }
