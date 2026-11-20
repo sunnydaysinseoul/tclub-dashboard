@@ -309,8 +309,11 @@
         return {
           mode: 'firebase',
           subscribe: function (cb) {
-            boardRef.onSnapshot(function (d) { if (d.exists) cb(d.data()); },
-              function (e) { console.warn('[전광판] 불러오기 실패', e); });
+            // 오류가 나면 Firestore는 구독을 끊으므로, 1분 뒤 다시 연결 (전광판이 멈춰 있지 않게)
+            (function listen() {
+              boardRef.onSnapshot(function (d) { if (d.exists) cb(d.data()); },
+                function (e) { logError('load-fail', e); setTimeout(listen, 60000); });
+            })();
           },
           save: function (data) { return boardRef.set(data); },
           listArchive: function () {
@@ -322,7 +325,13 @@
           isAuthed: function () { return !!auth.currentUser; },
           onAuth: function (cb) { auth.onAuthStateChanged(cb); },
           signIn: function (email, pw) { return auth.signInWithEmailAndPassword(email, pw); },
-          signOut: function () { return auth.signOut(); }
+          signOut: function () { return auth.signOut(); },
+          who: function () { return auth.currentUser ? auth.currentUser.email || 'uid:' + auth.currentUser.uid : ''; },
+          // 오류 기록: logs 컬렉션에 추가만 함 (결과는 기다리지 않음)
+          log: function (entry) {
+            entry.t = firebase.firestore.FieldValue.serverTimestamp();
+            db.collection('logs').add(entry).catch(function () {});
+          }
         };
       } catch (e) {
         console.error('[전광판] Firebase 설정 오류, 미리보기 모드로 실행합니다.', e);
@@ -350,9 +359,50 @@
       isAuthed: function () { return true; },
       onAuth: function () {},
       signIn: function () { return Promise.resolve(); },
-      signOut: function () { return Promise.resolve(); }
+      signOut: function () { return Promise.resolve(); },
+      who: function () { return ''; },
+      log: function () {}
     };
   })();
+
+  /* =========================================================
+   * 오류 기록 (Firestore logs 컬렉션)
+   * 기록이 실패해도 화면 동작에는 영향이 없도록 모든 오류를 여기서 삼킴
+   * ======================================================= */
+  var logCount = 0, LOG_MAX = 30;               // 한 번 켜질 때 최대 30건 (무한 반복 방지)
+  function clip(v, n) { v = v == null ? '' : String(v); return v.length > n ? v.slice(0, n) : v; }
+  // 이메일은 앞 2글자와 도메인만 남김: ab***@gmail.com
+  function maskEmail(e) {
+    e = String(e || '');
+    var at = e.indexOf('@');
+    if (at < 0) return e ? e.slice(0, 2) + '***' : '';
+    return e.slice(0, Math.min(2, at)) + '***' + e.slice(at);
+  }
+  function logError(type, err, extra, who) {
+    try {
+      console.warn('[전광판] ' + type, err || '', extra || '');
+      if (logCount >= LOG_MAX) return;
+      logCount++;
+      var code = err && err.code ? err.code : (err && err.name ? err.name : '');
+      var msg = err && err.message ? err.message : (err == null ? '' : String(err));
+      if (extra) msg = extra + (msg ? ' | ' + msg : '');
+      store.log({
+        type: clip(type, 40),
+        code: clip(code, 100),
+        msg: clip(msg, 500),
+        page: MOBILE ? 'mobile' : 'pc',
+        ua: clip(navigator.userAgent, 300),
+        who: clip(maskEmail(who != null ? who : store.who()), 60),
+        online: navigator.onLine !== false
+      });
+    } catch (e) {}
+  }
+  // 예상하지 못한 스크립트 오류도 기록 (외부 스크립트의 "Script error."는 정보가 없어 제외)
+  window.addEventListener('error', function (e) {
+    if (!e || e.message === 'Script error.' || !e.filename) return;
+    logError('js-error', e.error || e.message, clip(e.filename.split('/').pop().split('?')[0], 60) + ':' + e.lineno);
+  });
+  window.addEventListener('unhandledrejection', function (e) { logError('unhandled', e && e.reason); });
 
   // 마지막 내용 캐시 (인터넷이 잠깐 끊겨도 화면 유지)
   var CACHE = 'gymboard.cache';
@@ -448,6 +498,7 @@
       enterEdit();
     }).catch(function (err) {
       var code = err && err.code || '';
+      logError('login-fail', err, null, email);
       $('loginErr').textContent = /wrong-password|invalid-credential|invalid-login/.test(code) ? '비밀번호가 맞지 않아요.'
         : /too-many-requests/.test(code) ? '시도가 너무 많아요. 잠시 뒤 다시 해 주세요.'
         : /network/.test(code) ? '인터넷 연결을 확인해 주세요.'
@@ -456,7 +507,7 @@
   });
 
   $('btnLogout').addEventListener('click', function () {
-    store.signOut().then(function () {
+    store.signOut().catch(function (e) { logError('logout-fail', e); }).then(function () {
       if (MOBILE) { openModal('loginModal'); return; }
       exitEdit();
     });
@@ -472,17 +523,25 @@
     btn.disabled = true;
     setStatus('저장하는 중...');
     var payload = Object.assign({}, data, { updatedAt: Date.now() });
+    // 인터넷이 끊기면 저장이 끝나지 않고 기다리기만 하므로, 15초가 지나면 안내
+    var slow = setTimeout(function () {
+      setStatus('저장이 늦어지고 있어요. 인터넷 연결을 확인해 주세요. 연결되면 이어서 저장됩니다.', 'warn');
+      logError('save-slow', null, '15초 넘게 저장 응답 없음');
+    }, 15000);
     store.save(payload).then(function () {
+      clearTimeout(slow);
       board = Object.assign(clone(DEFAULT_BOARD), data);
       try { localStorage.setItem(CACHE, JSON.stringify(board)); } catch (e) {}
-      return archiveCurrent(data).catch(function (e) { console.warn('[전광판] 보관 실패', e); });
+      return archiveCurrent(data).catch(function (e) { logError('archive-save-fail', e); });
     }).then(function () {
       btn.disabled = false;
       exitEdit();
       if (MOBILE) setStatus('');
       toast('저장했어요. 대시보드에 바로 반영됩니다.');
     }).catch(function (e) {
+      clearTimeout(slow);
       btn.disabled = false;
+      logError('save-fail', e);
       setStatus('저장하지 못했어요. 인터넷 연결이나 로그인 상태를 확인해 주세요. (' + (e && e.code || e) + ')', 'bad');
       toast('저장하지 못했어요. 인터넷이나 로그인 상태를 확인해 주세요.', 'bad');
     });
@@ -681,7 +740,10 @@
     openModal('archiveModal');
     $('arcList').innerHTML = '<div class="arc-empty">불러오는 중...</div>';
     store.listArchive().then(function (items) { arcItems = items; drawArchive(); })
-      .catch(function (e) { $('arcList').innerHTML = '<div class="arc-empty">보관함을 불러오지 못했어요. (' + (e && e.code || e) + ')</div>'; });
+      .catch(function (e) {
+        logError('archive-load-fail', e);
+        $('arcList').innerHTML = '<div class="arc-empty">보관함을 불러오지 못했어요. (' + (e && e.code || e) + ')</div>';
+      });
   }
 
   function fmtDate(ms) {
@@ -724,6 +786,9 @@
           store.delArchive(it.id).then(function () {
             arcItems = arcItems.filter(function (x) { return x.id !== it.id; });
             drawArchive();
+          }).catch(function (e) {
+            logError('archive-delete-fail', e);
+            toast('삭제하지 못했어요. 인터넷이나 로그인 상태를 확인해 주세요.', 'bad');
           });
         } else {
           del.setAttribute('data-sure', '1'); del.textContent = '한 번 더 누르면 삭제';
