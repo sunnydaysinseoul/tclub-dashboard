@@ -21,7 +21,7 @@
 })();
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=20261120c">
+<link rel="stylesheet" href="style.css?v=20261120d">
 </head>
 <body>
 
@@ -50,10 +50,9 @@
     <button type="button" id="btnClear">서식 지우기</button>
     <span class="tb-spacer"></span>
     <button type="button" id="btnArchive">수업 보관함</button>
-    <button type="button" id="btnCancel">취소</button>
     <button type="button" id="btnApply">화면에만 적용</button>
     <button type="button" id="btnSave" class="primary">보관함 저장 + 적용</button>
-    <button type="button" id="btnLogout">로그아웃</button>
+    <button type="button" id="btnCancel">취소</button>
   </div>
   <div id="status" aria-live="polite"></div>
 </div>
@@ -81,6 +80,9 @@
     </div>
   </div>
 </div>
+
+<!-- 편집 중에만 보이는 아래쪽 작은 링크 -->
+<div id="editFoot" class="foot-links"><a href="mailto:youngsunhan.kr@gmail.com?subject=%5B%ED%8B%B0%ED%81%B4%EB%9F%BD%20%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%5D%20%EB%AC%B8%EC%9D%98">개발자에게 문의하기</a><span class="dot">|</span><button type="button" id="btnLogout" class="linkish">로그아웃</button></div>
 
 <button type="button" id="editBtn" title="편집" aria-label="편집">&#x270E;&#xFE0E;</button>
 
@@ -123,7 +125,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="config.js?v=20261120c"></script>
-<script src="app.js?v=20261120c"></script>
+<script src="config.js?v=20261120d"></script>
+<script src="app.js?v=20261120d"></script>
 </body>
 </html>
