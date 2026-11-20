@@ -2,10 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 아래 이메일을 관리자 계정 이메일로 바꿔 주세요 (config.js의 adminEmail과 같게)
+    // 편집할 수 있는 계정 이메일 목록 (공개 저장소라 여기엔 예시만 두고,
+    // 실제 이메일은 Firebase 콘솔 > Firestore > 규칙 에서 바꿔 넣고 게시하세요)
+    // 사람을 더 추가하려면 쉼표로 이어서 적으면 됩니다.
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email == "admin@example.com";
+        && request.auth.token.email in ["admin@example.com", "second-admin@example.com"];
     }
 
     // 전광판 내용: 누구나 볼 수 있고, 관리자만 수정 가능
