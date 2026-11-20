@@ -450,7 +450,7 @@
   function modeNote() {
     return store.mode === 'local'
       ? '미리보기 모드: Firebase가 아직 연결되지 않아 이 브라우저에만 저장됩니다.'
-      : '글자를 드래그해서 선택한 뒤 크기, 굵게, 밑줄, 색을 바꾸세요. 다 고치면 "저장 및 적용"을 눌러 주세요.';
+      : '글자를 드래그해서 선택한 뒤 크기, 굵게, 밑줄, 색을 바꾸세요. 다 고치면 "화면에만 적용"을 누르세요. 보관함에도 남기려면 "보관함 저장 + 적용"을 누르세요.';
   }
 
   function enterEdit() {
@@ -559,12 +559,13 @@
 
   $('btnCancel').addEventListener('click', function () { exitEdit(); });
 
-  $('btnSave').addEventListener('click', function () {
+  // 화면에만 적용: 대시보드에만 반영 / 보관함 저장 + 적용: 반영하고 보관함에도 남김
+  var saveBtns = [$('btnApply'), $('btnSave')];
+  function saveBoard(withArchive) {
     var data = {};
     HTML_FIELDS.forEach(function (f) { data[f] = getHtml($(f)); });
     data.notice = $('noticeEdit').innerText.replace(/\s+/g, ' ').trim();
-    var btn = this;
-    btn.disabled = true;
+    saveBtns.forEach(function (b) { b.disabled = true; });
     setStatus('저장하는 중...');
     var payload = Object.assign({}, data, { updatedAt: Date.now() });
     // 인터넷이 끊기면 저장이 끝나지 않고 기다리기만 하므로, 15초가 지나면 안내
@@ -576,26 +577,23 @@
       clearTimeout(slow);
       board = Object.assign(clone(DEFAULT_BOARD), data);
       try { localStorage.setItem(CACHE, JSON.stringify(board)); } catch (e) {}
+      if (!withArchive) return;
       return archiveCurrent(data).catch(function (e) { logError('archive-save-fail', e); });
     }).then(function () {
-      btn.disabled = false;
+      saveBtns.forEach(function (b) { b.disabled = false; });
       exitEdit();
       if (MOBILE) setStatus('');
-      toast('저장했어요. 대시보드에 바로 반영됩니다.');
+      toast(withArchive ? '보관함에 저장하고 화면에 적용했어요.' : '화면에만 적용했어요. (보관함에는 저장 안 함)');
     }).catch(function (e) {
       clearTimeout(slow);
-      btn.disabled = false;
+      saveBtns.forEach(function (b) { b.disabled = false; });
       logError('save-fail', e);
       setStatus('저장하지 못했어요. 인터넷 연결이나 로그인 상태를 확인해 주세요. (' + (e && e.code || e) + ')', 'bad');
       toast('저장하지 못했어요. 인터넷이나 로그인 상태를 확인해 주세요.', 'bad');
     });
-  });
-
-  $('btnToday').addEventListener('click', function () {
-    setHtml($('lessonDate'), todayLabel());
-    dirty = true;
-    setStatus('오른쪽 날짜에 오늘 날짜를 넣었어요. (날짜 칸을 비워 두면 매일 자동으로 바뀝니다)');
-  });
+  }
+  $('btnApply').addEventListener('click', function () { saveBoard(false); });
+  $('btnSave').addEventListener('click', function () { saveBoard(true); });
 
   // 붙여넣기는 글자만 (다른 곳 서식이 섞이지 않게)
   editables.forEach(function (el) {
@@ -821,7 +819,7 @@
         setHtml($(it.type === 'lesson' ? 'lessonBody' : 'missionBody'), it.html);
         dirty = true;
         closeModal('archiveModal');
-        setStatus('보관함에서 불러왔어요. "저장 및 적용"을 눌러야 전광판에 반영됩니다.', 'warn');
+        setStatus('보관함에서 불러왔어요. "화면에만 적용"이나 "보관함 저장 + 적용"을 눌러야 전광판에 반영됩니다.', 'warn');
         checkOverflow();
       });
       var del = document.createElement('button'); del.type = 'button'; del.className = 'danger'; del.textContent = '삭제';

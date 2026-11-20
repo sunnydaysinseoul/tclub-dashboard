@@ -1,7 +1,7 @@
 /* 휴대폰 편집 화면 (mobile.html) 전용 */
 html:has(body.mobile) { height: auto; overflow-y: auto; overflow-x: hidden; }
 body.mobile { height: auto; min-height: 100%; overflow: visible; }
-body.mobile { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+body.mobile { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
 
 body.mobile #toolbar {
   position: sticky; top: 0;
@@ -42,7 +42,7 @@ body.mobile #noticeEdit:focus { border-color: var(--yellow); border-left-color: 
 
 #mActions {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-  display: flex; gap: 8px;
+  display: flex; flex-wrap: wrap; gap: 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   background: #111; border-top: 1px solid #3a3a3a;
 }
@@ -51,7 +51,10 @@ body.mobile #noticeEdit:focus { border-color: var(--yellow); border-left-color: 
   font: inherit; font-size: 16px; color: #eee; background: #1c1c1c;
   border: 1px solid #444; cursor: pointer;
 }
-#mActions button.primary { flex: 1.6 1 0; background: #fff; color: #000; border-color: #fff; font-weight: 700; }
+/* 윗줄: 보관함, 되돌리기 / 아랫줄: 적용, 적용 + 보관함 저장 */
+#mActions #btnArchive, #mActions #btnCancel { flex: 1 1 calc(50% - 4px); height: 40px; font-size: 15px; }
+#mActions #btnApply { flex: 1 1 calc(40% - 4px); }
+#mActions button.primary { flex: 1 1 calc(60% - 4px); background: #fff; color: #000; border-color: #fff; font-weight: 700; }
 #mActions button:disabled { opacity: .5; }
 
 /* 휴대폰 보관함: 버튼을 아래 줄로 */
@@ -66,6 +69,6 @@ body.mobile #noticeEdit:focus { border-color: var(--yellow); border-left-color: 
 }
 
 /* 토스트는 아래 버튼 바 바로 위에 */
-body.mobile #toast { bottom: calc(84px + env(safe-area-inset-bottom)); width: calc(100% - 24px); }
+body.mobile #toast { bottom: calc(136px + env(safe-area-inset-bottom)); width: calc(100% - 24px); }
 /* 로그인 창(아래쪽)이 열려 있을 때는 토스트를 위쪽에 띄워 안내 문구를 가리지 않게 */
 body.mobile .modal:not([hidden]) ~ #toast { top: calc(16px + env(safe-area-inset-top)); bottom: auto; }

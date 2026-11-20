@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#000000">
 <title>티클럽 대시보드 편집</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=20261120b">
-<link rel="stylesheet" href="mobile.css?v=20261120b">
+<link rel="stylesheet" href="style.css?v=20261120c">
+<link rel="stylesheet" href="mobile.css?v=20261120c">
 </head>
 <body class="mobile">
 
@@ -33,7 +33,6 @@
     <span class="tb-sep"></span>
     <button type="button" id="btnClear">서식 지우기</button>
     <span class="tb-sep"></span>
-    <button type="button" id="btnToday">오늘 날짜 넣기</button>
     <button type="button" id="btnLogout">로그아웃</button>
   </div>
   <div id="status" aria-live="polite"></div>
@@ -68,7 +67,8 @@
 <div id="mActions">
   <button type="button" id="btnArchive">보관함</button>
   <button type="button" id="btnCancel">되돌리기</button>
-  <button type="button" id="btnSave" class="primary">저장 및 적용</button>
+  <button type="button" id="btnApply">화면에만 적용</button>
+  <button type="button" id="btnSave" class="primary">보관함 저장 + 적용</button>
 </div>
 
 <!-- 관리자 로그인 -->
@@ -100,7 +100,7 @@
           <option value="mission">이번주 미션</option>
         </select>
       </div>
-      <p class="hint">저장할 때마다 미션과 수업 내용이 자동으로 이곳에 보관됩니다. 같은 내용은 한 번만 보관돼요.</p>
+      <p class="hint">"보관함 저장 + 적용"을 누르면 미션과 수업 내용이 이곳에 보관됩니다. 같은 내용은 한 번만 보관돼요.</p>
       <div id="arcList"></div>
     </div>
     <div class="dlg-foot"><button type="button" data-close>닫기</button></div>
@@ -110,7 +110,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="config.js?v=20261120b"></script>
-<script src="app.js?v=20261120b"></script>
+<script src="config.js?v=20261120c"></script>
+<script src="app.js?v=20261120c"></script>
 </body>
 </html>
