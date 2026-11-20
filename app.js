@@ -326,6 +326,17 @@
           onAuth: function (cb) { auth.onAuthStateChanged(cb); },
           signIn: function (email, pw) { return auth.signInWithEmailAndPassword(email, pw); },
           signOut: function () { return auth.signOut(); },
+          // 비밀번호 재설정 메일 (메일 문구는 한국어로)
+          resetPw: function (email) {
+            auth.languageCode = 'ko';
+            // 메일의 "계속" 버튼이 전광판으로 돌아오게 함. 허용되지 않은 주소면 그냥 기본 메일로 다시 보냄
+            if (!/^https?:/.test(location.protocol)) return auth.sendPasswordResetEmail(email);
+            var back = location.href.split('#')[0].split('?')[0];
+            return auth.sendPasswordResetEmail(email, { url: back }).catch(function (e) {
+              if (e && /unauthorized-continue-uri|invalid-continue-uri|missing-continue-uri/.test(e.code || '')) return auth.sendPasswordResetEmail(email);
+              throw e;
+            });
+          },
           who: function () { return auth.currentUser ? auth.currentUser.email || 'uid:' + auth.currentUser.uid : ''; },
           // 오류 기록: logs 컬렉션에 추가만 함 (결과는 기다리지 않음)
           log: function (entry) {
@@ -360,6 +371,7 @@
       onAuth: function () {},
       signIn: function () { return Promise.resolve(); },
       signOut: function () { return Promise.resolve(); },
+      resetPw: function () { return Promise.reject({ code: 'local-mode' }); },
       who: function () { return ''; },
       log: function () {}
     };
@@ -489,7 +501,7 @@
     var pw = $('pwInput').value;
     // 이메일은 공개 저장소에 넣지 않고, 로그인할 때 입력받아 이 기기에만 기억
     var email = ($('emailInput').value || CFG.adminEmail || '').trim();
-    $('loginErr').textContent = '';
+    $('loginErr').textContent = ''; $('loginErr').className = 'err';
     if (!email) { $('loginErr').textContent = '관리자 이메일을 입력해 주세요.'; return; }
     store.signIn(email, pw).then(function () {
       try { localStorage.setItem('gymboard.email', email); } catch (e) {}
@@ -504,6 +516,38 @@
         : /network/.test(code) ? '인터넷 연결을 확인해 주세요.'
         : '로그인하지 못했어요. (' + code + ')';
     });
+  });
+
+  // 비밀번호 찾기: 입력한 이메일로 재설정 메일 발송
+  // 계정이 있는지 없는지는 알려주지 않음 (외부인이 관리자 이메일을 알아내지 못하게)
+  var resetBusy = false;
+  $('btnForgot').addEventListener('click', function () {
+    if (resetBusy) return;
+    var email = ($('emailInput').value || '').trim();
+    var errEl = $('loginErr');
+    errEl.className = 'err';
+    if (!email) { errEl.textContent = '위 칸에 관리자 이메일을 먼저 입력해 주세요.'; $('emailInput').focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = '이메일 주소 형식을 확인해 주세요.'; $('emailInput').focus(); return; }
+    resetBusy = true;
+    errEl.textContent = '재설정 메일을 보내는 중...';
+    errEl.className = 'err ok';
+    var sent = function () {
+      errEl.className = 'err ok';
+      errEl.textContent = '등록된 관리자 이메일이면 비밀번호 재설정 메일이 발송됩니다. 메일함(스팸함 포함)에서 링크를 눌러 새 비밀번호를 정해 주세요.';
+      toast('재설정 메일을 보냈어요. 메일함을 확인해 주세요.');
+    };
+    store.resetPw(email).then(sent).catch(function (err) {
+      var code = err && err.code || '';
+      if (/user-not-found/.test(code)) { sent(); return; }   // 계정 유무를 드러내지 않음
+      errEl.className = 'err';
+      if (code === 'local-mode') { errEl.textContent = '미리보기 모드에서는 비밀번호가 없어요.'; return; }
+      logError('reset-fail', err, null, email);
+      errEl.textContent = /invalid-email/.test(code) ? '이메일 주소 형식을 확인해 주세요.'
+        : /too-many-requests/.test(code) ? '요청이 너무 많아요. 잠시 뒤 다시 해 주세요.'
+        : /network/.test(code) ? '인터넷 연결을 확인해 주세요.'
+        : '메일을 보내지 못했어요. (' + code + ')';
+      toast('재설정 메일을 보내지 못했어요.', 'bad');
+    }).then(function () { resetBusy = false; });
   });
 
   $('btnLogout').addEventListener('click', function () {
