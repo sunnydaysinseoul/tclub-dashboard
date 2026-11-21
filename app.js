@@ -256,10 +256,16 @@
     buildTicker();
   }
 
-  function buildTicker() {
+  // 공지 글이 그대로면 흐르던 자리에서 계속 흐르게 둠 (force: 글꼴이 늦게 로드돼 폭이 바뀐 경우)
+  var tickerText = null;
+  function buildTicker(force) {
     var track = byId('tickerTrack'), view = byId('tickerView');
     if (!track || !view) return;
+    // 편집 중에는 티커가 숨겨져 폭을 잴 수 없으므로 만들지 않음 (편집을 마치면 다시 만듦)
+    if (editing) { tickerText = null; return; }
     var text = (board.notice || '').replace(/\s+/g, ' ').trim();
+    if (!force && text === tickerText) return;
+    tickerText = text;
     track.style.animation = 'none';
     track.innerHTML = '';
     if (!text) return;
@@ -951,7 +957,7 @@
       else openModal('loginModal');
     });
   }
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!editing) buildTicker(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!editing) buildTicker(true); });
 
   // 테스트용으로 내부 함수 노출
   window.__board = { readModel: readModel, writeModel: writeModel, setHtml: setHtml, getHtml: getHtml };
