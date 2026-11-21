@@ -937,13 +937,23 @@
     if (f) setTimeout(function () { f.focus(); }, 0);
   }
   function closeModal(id) { $(id).hidden = true; }
+  // 로그인 창은 바깥을 누르거나 Esc를 눌러도 닫히지 않음. 닫기 버튼으로만 닫힘.
+  // 휴대폰 편집 화면에서는 로그인 없이 볼 게 없으므로 닫기 = 대시보드 화면으로 이동.
   Array.prototype.forEach.call(document.querySelectorAll('.modal'), function (m) {
     m.addEventListener('click', function (e) {
-      if (e.target === m || e.target.hasAttribute('data-close')) closeModal(m.id);
+      var isClose = e.target.hasAttribute('data-close');
+      if (m.id === 'loginModal') {
+        if (!isClose) return;
+        if (MOBILE) { location.href = 'index.html?view=board'; return; }
+        closeModal(m.id); return;
+      }
+      if (e.target === m || isClose) closeModal(m.id);
     });
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') Array.prototype.forEach.call(document.querySelectorAll('.modal'), function (m) { m.hidden = true; });
+    if (e.key === 'Escape') Array.prototype.forEach.call(document.querySelectorAll('.modal'), function (m) {
+      if (m.id !== 'loginModal') m.hidden = true;
+    });
   });
 
   /* ---------- 시작 ---------- */
