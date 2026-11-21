@@ -938,13 +938,12 @@
   }
   function closeModal(id) { $(id).hidden = true; }
   // 로그인 창은 바깥을 누르거나 Esc를 눌러도 닫히지 않음. 닫기 버튼으로만 닫힘.
-  // 휴대폰 편집 화면에서는 로그인 없이 볼 게 없으므로 닫기 = 대시보드 화면으로 이동.
+  // 휴대폰 편집 화면(mobile.html)의 로그인 창에는 닫기 버튼이 없어서 로그인 전에는 닫을 수 없음.
   Array.prototype.forEach.call(document.querySelectorAll('.modal'), function (m) {
     m.addEventListener('click', function (e) {
       var isClose = e.target.hasAttribute('data-close');
       if (m.id === 'loginModal') {
         if (!isClose) return;
-        if (MOBILE) { location.href = 'index.html?view=board'; return; }
         closeModal(m.id); return;
       }
       if (e.target === m || isClose) closeModal(m.id);
